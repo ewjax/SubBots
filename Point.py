@@ -18,7 +18,7 @@ class Point:
     def distance_to(self, other_point: Point) -> float:
         """
         :param other_point: the other point
-        :return: range from this point to another point
+        :return: distance from this point to another point
         """
         return math.sqrt((other_point.x - self.x) ** 2 + (other_point.y - self.y) ** 2)
 
