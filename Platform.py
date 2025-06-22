@@ -42,6 +42,7 @@ def main():
     for entry in platform.__dict__:
         print(f'{entry}: {platform.__dict__[entry]}')
 
+    print(f'original = {platform}')
     pd = pickle.dumps(platform)
     print(f'pickled = {pd}')
     pu = pickle.loads(pd)
