@@ -3,10 +3,12 @@ import Point
 # import json
 import pickle
 
-class Platform:
+#
+# data class for all data for this platform, maintained by the simulation umpire
+#
+class PlatformStatus:
 
     def __init__(self):
-        self.platform_id = 0        # unique ID
         self.location = Point.Point(3,4)    # cartesian (x,y) location
 
         self.course = 0.0           # in degrees
@@ -21,10 +23,17 @@ class Platform:
         self.speed_ordered = 0      # in knots
         self.acceleration = 5       # rate speed changes/unit time
 
-        self.timestamp = ''         # latest
+        self.timestamp = ''         # timestamp for this data point
 
         self.hull = 100             # damage, 0 = sunk
 
+
+class Platform:
+
+    def __init__(self):
+        self.platform_id = 0        # unique ID
+
+        self.platform_status = PlatformStatus()
         self.baseline_sound_level = 50  # sound power level, in decibels, at all stop
 
 
@@ -32,18 +41,16 @@ class Platform:
 
 
 
-
-
 def main():
-    platform = Platform()
-    # print(f'{json.dumps(platform)}')
-    # print(f'{json.dumps(platform.__dict__)}')
+    platform_status = PlatformStatus()
+    # print(f'{json.dumps(platform_status)}')
+    # print(f'{json.dumps(platform_status.__dict__)}')
 
-    for entry in platform.__dict__:
-        print(f'{entry}: {platform.__dict__[entry]}')
+    for entry in platform_status.__dict__:
+        print(f'{entry}: {platform_status.__dict__[entry]}')
 
-    print(f'original = {platform}')
-    pd = pickle.dumps(platform)
+    print(f'original = {platform_status}')
+    pd = pickle.dumps(platform_status)
     print(f'pickled = {pd}')
     pu = pickle.loads(pd)
     print(f'unpickled = {pu}')
