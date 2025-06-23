@@ -28,6 +28,7 @@ def main():
 
     # text message
     my_client.publish(topic = 'general', payload = 'Generic text message', qos = 0)
+    my_client.publish(topic = 'disco', payload = '', qos = 0)
 
     my_client.disconnect()
 
