@@ -8,17 +8,11 @@ import math
 # data class to hold cartesian (x,y) location coordinates
 #
 # note use of @dataclass annotation to auto-create __init__, __repr__, and __eq__
-@dataclass()
+@dataclass
 class Point:
+    # standard cartesian coordinates
     x: int = 0
     y: int = 0
-
-    # def __init__(self, x: int = 0, y: int = 0):
-    #     # classic cartesian coordinates, i.e
-    #     #   x increasing from west to east
-    #     #   y increasing from south to north
-    #     self.x: int = x
-    #     self.y: int = y
 
     def distance_to(self, other_point: Point) -> float:
         """
@@ -31,10 +25,9 @@ class Point:
     def bearing_to(self, other_point: Point) -> float:
         """
         Bearings in compass format, 0-360
-
         :type other_point: Point
         :param other_point: the other point
-        :return: bearing from this point to another point
+        :return: compass bearing from this point to another point
         """
         rv = -1
         if self != other_point:
@@ -107,3 +100,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

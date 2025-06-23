@@ -33,7 +33,7 @@ def on_message_callback(client: paho.mqtt.client.Client, userdata, msg: paho.mqt
 # data class for all data for this platform, maintained by the simulation umpire
 #
 # note use of @dataclass annotation to auto-create __init__, __repr__, and __eq__
-@dataclass()
+@dataclass
 class PlatformStatus:
     # cartesian (x,y) location
     # location: Point.Point = Point.Point(3, 4)
@@ -60,31 +60,6 @@ class PlatformStatus:
     # damage, 0 = sunk
     hull = 100
 
-    # def __init__(self):
-    #     # cartesian (x,y) location
-    #     self.location: Point = Point.Point(3,4)
-    #
-    #     # in degrees and degrees/time
-    #     self.course: float = 0.0
-    #     self.course_ordered: float = 0.0
-    #     self.turn_rate: float = 10.0
-    #
-    #     # in feet (0 = surfaced) and feet/time
-    #     self.depth: int = 0
-    #     self.depth_ordered: int = 0
-    #     self.depth_change_rate: int = 10
-    #
-    #     # in knots and knots/time
-    #     self.speed: float = 0
-    #     self.speed_ordered: float = 0
-    #     self.acceleration: float = 5
-    #
-    #     # timestamp for this data point
-    #     self.timestamp: datetime.datetime = datetime.datetime.now()
-    #
-    #     # damage, 0 = sunk
-    #     self.hull = 100
-
 
 class Platform:
 
@@ -100,9 +75,6 @@ class Platform:
 
 
 
-
-
-
 def main():
     platform = Platform()
     platform_status = platform.platform_status
@@ -110,11 +82,11 @@ def main():
     print('---------------------------------------------------------------------')
     print('Platform:')
     for entry in platform.__dict__:
-        print(f'{entry}: {platform.__dict__[entry]}')
+        print(f'    {entry}: {platform.__dict__[entry]}')
     print('---------------------------------------------------------------------')
     print('PlatformStatus:')
     for entry in platform_status.__dict__:
-        print(f'{entry}: {platform_status.__dict__[entry]}')
+        print(f'    {entry}: {platform_status.__dict__[entry]}')
     print('---------------------------------------------------------------------')
     print('Binary serialization with pickle:')
 
