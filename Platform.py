@@ -6,27 +6,10 @@ import uuid
 import pickle
 import datetime
 
+import config
 import Point
 
 
-# define callback function for when message is received
-def on_message_callback(client: paho.mqtt.client.Client, userdata, msg: paho.mqtt.client.MQTTMessage):
-
-    # message received
-    print(f'[host:port:topic] = [{client.host}:{client.port}:{msg.topic}]')
-
-    # message with PlatformStatus binary data
-    if msg.topic == 'platform_status':
-        # payload is a pickled PlatformStatus object (binary data)
-        # noinspection PyTypeChecker
-        platform_status: PlatformStatus = pickle.loads(msg.payload)
-        for entry in platform_status.__dict__:
-            print(f'    {entry}: {platform_status.__dict__[entry]}')
-
-    # message with text data.  Note it is still binary, so we use .decode() to get the string version
-    else:
-        print(f'    {msg.payload}')
-        print(f'    {msg.payload.decode('utf-8')}')
 
 
 #
@@ -73,6 +56,58 @@ class Platform:
         # sound power level, in decibels, at all stop
         self.baseline_sound_level = 50
 
+    # define callback function for when message is received
+    @staticmethod
+    def on_message_callback(client: paho.mqtt.client.Client, userdata, msg: paho.mqtt.client.MQTTMessage):
+
+        # message received
+        print(f'[host:port:topic] = [{client.host}:{client.port}:{msg.topic}]')
+
+        # message with PlatformStatus binary data
+        if msg.topic == 'platform_status':
+            # payload is a pickled PlatformStatus object (binary data)
+            # noinspection PyTypeChecker
+            platform_status: PlatformStatus = pickle.loads(msg.payload)
+            for entry in platform_status.__dict__:
+                print(f'    {entry}: {platform_status.__dict__[entry]}')
+
+        # message with text data.  Note it is actually still binary, so we use .decode() to get the string version
+        else:
+            print(f'    {msg.payload}')
+            print(f'    {msg.payload.decode('utf-8')}')
+
+    def connect(self):
+        """
+        Connect to the MQTT data broker
+        """
+        # get data from ini file
+        config.load()       # todo - we really only need to load the data once
+        mqtt_host: str = config.config_data.get('MQTT-Broker', 'host')
+        mqtt_port: int = config.config_data.getint('MQTT-Broker', 'port')
+
+        my_client: paho.mqtt.client.Client = paho.mqtt.client.Client(paho.mqtt.client.CallbackAPIVersion.VERSION2)
+
+        # set the callback function to be called whenever a message is received
+        my_client.on_message = Platform.on_message_callback
+
+        # connect to MQTT broker
+        if my_client.connect(host = mqtt_host, port = mqtt_port, keepalive = 60) != 0:
+            print('Could not connect to MQTT broker')
+            sys.exit(-1)
+
+        # subscribe
+        # my_client.subscribe(topic='platform_status')
+        # my_client.subscribe(topic='general')
+        my_client.subscribe(topic='+')
+
+        # loop and listen for incoming messages
+        try:
+            print('Press CTRL-C to exit')
+            my_client.loop_forever()
+        except OSError:
+            print('Connection to MQTT broker has failed')
+
+        my_client.disconnect()
 
 
 def main():
@@ -99,29 +134,8 @@ def main():
     print('---------------------------------------------------------------------')
     print('Listen for messages from MQTT broker:')
 
-    my_client = paho.mqtt.client.Client(paho.mqtt.client.CallbackAPIVersion.VERSION2)
-
-    # set the callback function to be called whenever a message is received
-    my_client.on_message = on_message_callback
-
-    # connect to MQTT broker
-    if my_client.connect(host = 'fourbee', port = 1883, keepalive = 60) != 0:
-        print('Could not connect to MQTT broker')
-        sys.exit(-1)
-
-    # subscribe
-    # my_client.subscribe(topic='test/hello_world')
-    my_client.subscribe(topic = 'platform_status')
-    my_client.subscribe(topic = 'general')
-
-    # loop and listen for incoming messages
-    try:
-        print('Press CTRL-C to exit')
-        my_client.loop_forever()
-    except OSError:
-        print('Connection to MQTT broker has failed')
-
-    my_client.disconnect()
+    # initiate connection and begin listening
+    platform.connect()
 
 
 if __name__ == '__main__':

@@ -2,14 +2,20 @@ import paho.mqtt.client
 import sys
 import pickle
 
+import config
 import Platform
 
 def main():
 
+    # get data from ini file
+    config.load()
+    mqtt_host: str = config.config_data.get('MQTT-Broker', 'host')
+    mqtt_port: int = config.config_data.getint('MQTT-Broker', 'port')
+
     my_client = paho.mqtt.client.Client(paho.mqtt.client.CallbackAPIVersion.VERSION2)
 
     # connect to MQTT broker
-    if my_client.connect(host = 'fourbee', port = 1883, keepalive = 60) != 0:
+    if my_client.connect(host = mqtt_host, port = mqtt_port, keepalive = 60) != 0:
         print('Could not connect to MQTT broker')
         sys.exit(-1)
 
