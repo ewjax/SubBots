@@ -1,8 +1,10 @@
+from dataclasses import dataclass, field
 
 import paho.mqtt.client
 import sys
 import uuid
 import pickle
+import datetime
 
 import Point
 
@@ -30,32 +32,58 @@ def on_message_callback(client: paho.mqtt.client.Client, userdata, msg: paho.mqt
 #
 # data class for all data for this platform, maintained by the simulation umpire
 #
+# note use of @dataclass annotation to auto-create __init__, __repr__, and __eq__
+@dataclass()
 class PlatformStatus:
+    # cartesian (x,y) location
+    # location: Point.Point = Point.Point(3, 4)
+    location: Point.Point = field(default_factory=Point.Point)
 
-    def __init__(self):
-        # cartesian (x,y) location
-        self.location: Point = Point.Point(3,4)
+    # in degrees and degrees/time
+    course: float = 0.0
+    course_ordered: float = 0.0
+    turn_rate: float = 10.0
 
-        # in degrees and degrees/time
-        self.course: float = 0.0
-        self.course_ordered: float = 0.0
-        self.turn_rate: float = 10.0
+    # in feet (0 = surfaced) and feet/time
+    depth: int = 0
+    depth_ordered: int = 0
+    depth_change_rate: int = 10
 
-        # in feet (0 = surfaced) and feet/time
-        self.depth: int = 0
-        self.depth_ordered: int = 0
-        self.depth_change_rate: int = 10
+    # in knots and knots/time
+    speed: float = 0
+    speed_ordered: float = 0
+    acceleration: float = 5
 
-        # in knots and knots/time
-        self.speed: float = 0
-        self.speed_ordered: float = 0
-        self.acceleration: float = 5
+    # timestamp for this data point
+    timestamp: datetime.datetime = datetime.datetime.now()
 
-        # timestamp for this data point
-        self.timestamp: str = ''
+    # damage, 0 = sunk
+    hull = 100
 
-        # damage, 0 = sunk
-        self.hull = 100
+    # def __init__(self):
+    #     # cartesian (x,y) location
+    #     self.location: Point = Point.Point(3,4)
+    #
+    #     # in degrees and degrees/time
+    #     self.course: float = 0.0
+    #     self.course_ordered: float = 0.0
+    #     self.turn_rate: float = 10.0
+    #
+    #     # in feet (0 = surfaced) and feet/time
+    #     self.depth: int = 0
+    #     self.depth_ordered: int = 0
+    #     self.depth_change_rate: int = 10
+    #
+    #     # in knots and knots/time
+    #     self.speed: float = 0
+    #     self.speed_ordered: float = 0
+    #     self.acceleration: float = 5
+    #
+    #     # timestamp for this data point
+    #     self.timestamp: datetime.datetime = datetime.datetime.now()
+    #
+    #     # damage, 0 = sunk
+    #     self.hull = 100
 
 
 class Platform:

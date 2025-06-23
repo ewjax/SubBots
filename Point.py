@@ -1,19 +1,24 @@
 # this postpones evaluation in annotations, allowing type Point to be passed to Point member functions
 from __future__ import annotations
 
+from dataclasses import dataclass
 import math
 
 #
-# class to hold cartesian (x,y) location coordinates
+# data class to hold cartesian (x,y) location coordinates
 #
+# note use of @dataclass annotation to auto-create __init__, __repr__, and __eq__
+@dataclass()
 class Point:
+    x: int = 0
+    y: int = 0
 
-    def __init__(self, x: int = 0, y: int = 0):
-        # classic cartesian coordinates, i.e
-        #   x increasing from west to east
-        #   y increasing from south to north
-        self.x: int = x
-        self.y: int = y
+    # def __init__(self, x: int = 0, y: int = 0):
+    #     # classic cartesian coordinates, i.e
+    #     #   x increasing from west to east
+    #     #   y increasing from south to north
+    #     self.x: int = x
+    #     self.y: int = y
 
     def distance_to(self, other_point: Point) -> float:
         """
@@ -37,11 +42,15 @@ class Point:
         return rv
 
 
+# noinspection PyMissingOrEmptyDocstring
 def main():
-
     # do some basic testing of range
+    # p1 = Point(0, 0)
     p1 = Point()
     p2 = Point(3, 4)
+
+    print(f'p1: {p1}')
+    print(f'p2: {p2}')
 
     distance1 = p1.distance_to(p2)
     distance2 = p2.distance_to(p1)

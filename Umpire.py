@@ -15,6 +15,8 @@ def main():
 
     # binary message
     platform = Platform.Platform()
+    platform.platform_status.location.x = 7
+    platform.platform_status.location.y = -9
     platform.platform_status.depth = 9999   # just to confirm the info gets pickled/unpickled correctly
     my_client.publish(topic = 'platform_status', payload = pickle.dumps(platform.platform_status), qos = 0)
 
