@@ -51,10 +51,12 @@ class PlatformStatus:
 class Platform(paho.mqtt.client.Client):
 
     # ctor
-    def __init__(self, callback_api_version: CallbackAPIVersion = CallbackAPIVersion.VERSION2):
-
+    def __init__(self):
+        """
+        ctor
+        """
         # call parent ctor
-        super().__init__(callback_api_version)
+        super().__init__(CallbackAPIVersion.VERSION2)
 
         # unique ID
         self.platform_id = uuid.uuid4()
@@ -67,8 +69,22 @@ class Platform(paho.mqtt.client.Client):
 
         self.processing = False
 
-    def run(self):
+    #
+    # virtual function to capture specific actions for any Platform child class
+    #
+    def command_and_control(self) -> None:
+        """
+        virtual function to capture specific actions for any Platform child class
+        """
+        raise NotImplementedError()
 
+    #
+    # function for user to call to connect, register, and begin listening and reacting to messages
+    #
+    def run(self) -> None:
+        """
+        function for user to call to connect, register, and begin listening and reacting to messages
+        """
         # get config data from ini file
         config.load()
         mqtt_host: str = config.config_data.get('MQTT-Broker', 'host')
@@ -78,46 +94,29 @@ class Platform(paho.mqtt.client.Client):
         if self.connect(host = mqtt_host, port = mqtt_port, keepalive = 60) != 0:
             print('Could not connect to MQTT broker')
             sys.exit(-1)
+        print(f'Connected to mqtt broker [host:port] = [{mqtt_host}:{mqtt_port}]')
 
         # subscribe to needed topics
         self.do_subscriptions()
 
-        # begin processing loop
+        # set the processing boolean flag to True.  This will get set back to False when a 'disco' topic is received
         self.processing = True
+
+        # begin processing loop
         while self.processing:
 
-            # do platform things here
-
-            # ensure mqtt pub and sub queue's are processed, with a 100 ms delay
+            # ensure mqtt pub and sub buffers are processed, with a 100 ms time delay
             self.loop(0.1)
 
-            # do more platform things here
+            # do platform things here
+            self.command_and_control()
 
             # what is needed to handle reconnections?
 
         # do loop cleanup
         self.loop_stop()
         self.disconnect()
-        print(f'Disconnected')
-
-
-    # # connect to the mqtt broker
-    # # this function becomes a blocking loop, listening for subs
-    # def do_connect(self):
-    #     """
-    #     Connect to the MQTT data broker
-    #     """
-    #
-    #     # subscribe
-    #
-    #     # loop and listen for incoming messages
-    #     try:
-    #         print('Press CTRL-C to exit')
-    #         self.loop_forever()
-    #     except OSError:
-    #         print('Connection to MQTT broker has failed')
-    #
-    #     self.disconnect()
+        print(f'Disconnected from mqtt broker [host:port] = [{mqtt_host}:{mqtt_port}]')
 
     # manage all the mqtt topic subscriptions here
     def do_subscriptions(self) -> None:
@@ -126,10 +125,20 @@ class Platform(paho.mqtt.client.Client):
         """
         # my_client.subscribe(topic='platform_status')
         # my_client.subscribe(topic='general')
+
+        # todo - remove this wildcard and replace with specific topics
         self.subscribe(topic='+')
 
     # override the on_message callback
-    def on_message(self, client, userdata, msg) -> CallbackOnMessage | None:
+    def on_message(self, client: paho.mqtt.client.Client, userdata: any, msg: paho.mqtt.client.MQTTMessage) -> CallbackOnMessage | None:
+        """
+        Callback function that will be called any time a topic subscription is received
+        :param client:
+        :type client: paho.mqtt.client.Client
+        :param userdata:
+        :param msg:
+        :type msg: paho.mqtt.client.MQTTMessage
+        """
 
         # message received
         print(f'[host:port:topic] = [{self.host}:{self.port}:{msg.topic}]')
@@ -143,6 +152,8 @@ class Platform(paho.mqtt.client.Client):
                 print(f'    {entry}: {platform_status.__dict__[entry]}')
 
         elif msg.topic == 'disco':
+            print('    Disco message received')
+            # this will cause the main Platform processing loop to break out
             self.processing = False
 
         # message with text data.  Note it is actually still binary, so we use .decode() to get the string version
@@ -153,43 +164,16 @@ class Platform(paho.mqtt.client.Client):
 
 
 
-    # # define callback function for when message is received
-    # @staticmethod
-    # def on_message_callback(client: paho.mqtt.client.Client, userdata: any, msg: paho.mqtt.client.MQTTMessage) -> None:
-    #     """
-    #     Callback function that will be called any time a topic subscription is received
-    #     :param client:
-    #     :type client: paho.mqtt.client.Client
-    #     :param userdata:
-    #     :param msg:
-    #     :type msg: paho.mqtt.client.MQTTMessage
-    #     """
-    #     # message received
-    #     print(f'[host:port:topic] = [{client.host}:{client.port}:{msg.topic}]')
-    #
-    #     # message with PlatformStatus binary data
-    #     if msg.topic == 'platform_status':
-    #         # payload is a pickled PlatformStatus object (binary data)
-    #         # noinspection PyTypeChecker
-    #         platform_status: PlatformStatus = pickle.loads(msg.payload)
-    #         for entry in platform_status.__dict__:
-    #             print(f'    {entry}: {platform_status.__dict__[entry]}')
-    #
-    #     # message with text data.  Note it is actually still binary, so we use .decode() to get the string version
-    #     else:
-    #         print(f'    {msg.payload}')
-    #         print(f'    {msg.payload.decode('utf-8')}')
-    #
 
 def main():
-    platform = Platform()
-    platform_status = platform.platform_status
+    generic_bot = GenericSubBot()
+    platform_status = generic_bot.platform_status
 
-    print('---------------------------------------------------------------------')
-    print('Platform:')
-    for entry in platform.__dict__:
-        print(f'    {entry}: {platform.__dict__[entry]}')
-    print('---------------------------------------------------------------------')
+    # print('---------------------------------------------------------------------')
+    # print('Platform:')
+    # for entry in generic_bot.__dict__:
+    #     print(f'    {entry}: {generic_bot.__dict__[entry]}')
+    # print('---------------------------------------------------------------------')
     print('PlatformStatus:')
     for entry in platform_status.__dict__:
         print(f'    {entry}: {platform_status.__dict__[entry]}')
@@ -206,7 +190,7 @@ def main():
     print('Listen for messages from MQTT broker:')
 
     # initiate connection and begin listening
-    platform.run()
+    generic_bot.run()
 
 
 if __name__ == '__main__':
