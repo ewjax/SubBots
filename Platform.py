@@ -16,11 +16,10 @@ import Point
 #
 # data class for all data for this platform, maintained by the simulation umpire
 #
-# note use of @dataclass annotation to auto-create __init__, __repr__, and __eq__
+# note use of @dataclass decorator to auto-create __init__, __repr__, and __eq__
 @dataclass
 class PlatformStatus:
     # cartesian (x,y) location
-    # location: Point.Point = Point.Point(3, 4)
     location: Point.Point = field(default_factory=Point.Point)
 
     # in degrees and degrees/time
@@ -46,6 +45,8 @@ class PlatformStatus:
 
 
 #
+# intended as a base class for every craft present in the simulation
+#
 # derive from mqtt Client class
 #
 class Platform(paho.mqtt.client.Client):
@@ -67,6 +68,7 @@ class Platform(paho.mqtt.client.Client):
         # sound power level, in decibels, at all stop
         self.baseline_sound_level = 50
 
+        # control variable for mqtt loop
         self.processing = False
 
     #
@@ -76,7 +78,9 @@ class Platform(paho.mqtt.client.Client):
         """
         virtual function to capture specific actions for any Platform child class
         """
-        raise NotImplementedError()
+        # todo turn the exception back on after development and testing
+        # raise NotImplementedError()
+        pass
 
     #
     # function for user to call to connect, register, and begin listening and reacting to messages
@@ -111,7 +115,7 @@ class Platform(paho.mqtt.client.Client):
             # do platform things here
             self.command_and_control()
 
-            # what is needed to handle reconnections?
+            # todo what is needed to handle reconnections?
 
         # do loop cleanup
         self.loop_stop()
@@ -123,13 +127,13 @@ class Platform(paho.mqtt.client.Client):
         """
         Set up all the topic subscriptions for the mqtt client
         """
-        # my_client.subscribe(topic='platform_status')
-        # my_client.subscribe(topic='general')
+        self.subscribe(topic = 'platform_status')
+        self.subscribe(topic = 'general')
+        self.subscribe(topic = 'disco')
 
-        # todo - remove this wildcard and replace with specific topics
-        self.subscribe(topic='+')
 
     # override the on_message callback
+    # this function will get called for each message received
     def on_message(self, client: paho.mqtt.client.Client, userdata: any, msg: paho.mqtt.client.MQTTMessage) -> CallbackOnMessage | None:
         """
         Callback function that will be called any time a topic subscription is received
@@ -166,8 +170,8 @@ class Platform(paho.mqtt.client.Client):
 
 
 def main():
-    generic_bot = GenericSubBot()
-    platform_status = generic_bot.platform_status
+    my_bot = Platform()
+    platform_status = my_bot.platform_status
 
     # print('---------------------------------------------------------------------')
     # print('Platform:')
@@ -190,7 +194,7 @@ def main():
     print('Listen for messages from MQTT broker:')
 
     # initiate connection and begin listening
-    generic_bot.run()
+    my_bot.run()
 
 
 if __name__ == '__main__':

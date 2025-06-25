@@ -20,7 +20,7 @@ class SubBotExample(Platform.Platform):
         the user-defined logic for how this SubBot listens, navigates, and shoots
         """
         self.counter += 1
-        print(f'Just chillin out, round {self.counter}!')
+        print(f'Just counting sheep: {self.counter}!')
 
 
 
