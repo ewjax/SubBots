@@ -94,8 +94,7 @@ class Umpire(paho.mqtt.client.Client):
         """
         Set up all the topic subscriptions for the mqtt client
         """
-        # self.subscribe(topic = 'platform_status')
-        pass
+        self.subscribe(topic = 'register')
 
     # override the on_message callback
     # this function will get called for each message received
@@ -111,6 +110,13 @@ class Umpire(paho.mqtt.client.Client):
 
         # message received
         print(f'[host:port:topic] = [{self.host}:{self.port}:{msg.topic}]')
+
+        if msg.topic == 'register':
+            # save new platform to platform_list
+            # get new uuid
+            # initialize starting info
+            pass
+
 
         # # message with PlatformStatus binary data
         # if msg.topic == 'platform_status':

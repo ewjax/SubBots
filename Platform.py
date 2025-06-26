@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import Flag
 
 from paho.mqtt.client import CallbackOnMessage
 from paho.mqtt.enums import CallbackAPIVersion
@@ -13,6 +14,15 @@ import config
 import Point
 
 
+class PlatformType(Flag):
+    Unknown = 0
+    Sub = 1
+    Torpedo = 2
+    Moss = 4
+    NoiseMaker = 8
+    SurfaceShip = 16
+
+
 #
 # data class for all data for this platform, maintained by the simulation umpire
 #
@@ -20,7 +30,7 @@ import Point
 @dataclass
 class PlatformStatus:
     # cartesian (x,y) location
-    location: Point.Point = field(default_factory=Point.Point)
+    location: Point.Point = field(default_factory = Point.Point)
 
     # in degrees and degrees/time
     course: float = 0.0
@@ -62,6 +72,9 @@ class Platform(paho.mqtt.client.Client):
         # unique ID
         self.platform_id = uuid.uuid4()
 
+        # platform type
+        self.platform_type = PlatformType.Unknown
+
         # current status info
         self.platform_status = PlatformStatus()
 
@@ -78,9 +91,7 @@ class Platform(paho.mqtt.client.Client):
         """
         virtual function to capture specific actions for any Platform child class
         """
-        # todo turn the exception back on after development and testing
-        # raise NotImplementedError()
-        pass
+        raise NotImplementedError()
 
     #
     # function for user to call to connect, register, and begin listening and reacting to messages
@@ -102,6 +113,9 @@ class Platform(paho.mqtt.client.Client):
 
         # subscribe to needed topics
         self.do_subscriptions()
+
+        # register with the simulation umpire
+        self.publish(topic = 'register', payload = self.platform_type, qos=0)
 
         # set the processing boolean flag to True.  This will get set back to False when a 'disco' topic is received
         self.processing = True
