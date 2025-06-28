@@ -1,3 +1,9 @@
+# imports needed for the ECDH key exchange task
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey, EllipticCurvePublicKey
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
 from dataclasses import dataclass, field
 from enum import Flag
 
@@ -73,17 +79,23 @@ class Platform(paho.mqtt.client.Client):
         self.platform_id = uuid.uuid4()
 
         # platform type
-        self.platform_type = PlatformType.Unknown
+        self.platform_type : PlatformType = PlatformType.Unknown
 
         # current status info
-        self.platform_status = PlatformStatus()
+        self.platform_status : PlatformStatus = PlatformStatus()
 
         # sound power level, in decibels, at all stop
-        self.baseline_sound_level = 50
+        self.baseline_sound_level : int = 50
 
         # control variable for mqtt loop
-        self.processing = False
+        self.processing : bool = False
 
+        # Generate a private and public keys for use in the ECDH key exchange.
+        self.private_key : EllipticCurvePrivateKey = ec.generate_private_key(ec.SECP384R1())
+        self.public_key : EllipticCurvePublicKey = self.private_key.public_key()
+        self.umpire_public_key : EllipticCurvePublicKey = None  # todo - do we need to save this?
+        self.secret_shared_key : EllipticCurvePublicKey = None  # todo - do we need to save this?
+        self.secret_derived_shared_key : bytes = b''
     #
     # virtual function to capture specific actions for any Platform child class
     #
@@ -115,7 +127,11 @@ class Platform(paho.mqtt.client.Client):
         self.do_subscriptions()
 
         # register with the simulation umpire
-        self.publish(topic = 'register', payload = self.platform_type, qos=0)
+        self.publish(topic = 'register', payload = self.platform_type.value, qos = 0)
+
+         # send umpire our public key
+        self.publish(topic = 'platform_public_key', payload = self.public_key, qos = 0)
+
 
         # set the processing boolean flag to True.  This will get set back to False when a 'disco' topic is received
         self.processing = True
@@ -144,6 +160,7 @@ class Platform(paho.mqtt.client.Client):
         self.subscribe(topic = 'platform_status')
         self.subscribe(topic = 'general')
         self.subscribe(topic = 'disco')
+        self.subscribe(topic = 'umpire_public_key')
 
 
     # override the on_message callback
@@ -162,6 +179,7 @@ class Platform(paho.mqtt.client.Client):
         print(f'[host:port:topic] = [{self.host}:{self.port}:{msg.topic}]')
 
         # message with PlatformStatus binary data
+        # todo - encryption
         if msg.topic == 'platform_status':
             # payload is a pickled PlatformStatus object (binary data)
             # noinspection PyTypeChecker
@@ -170,12 +188,23 @@ class Platform(paho.mqtt.client.Client):
                 print(f'    {entry}: {platform_status.__dict__[entry]}')
 
         elif msg.topic == 'disco':
+            # todo - encryption
             print('    Disco message received')
             # this will cause the main Platform processing loop to break out
             self.processing = False
 
+        elif msg.topic == 'umpire_public_key':
+            print('    Umpire public key received')
+            # todo - umpire_public_key needs to be send/received by pickle
+            self.umpire_public_key = msg.payload
+
+            # determine shared secret key
+            self.secret_shared_key = self.private_key.exchange(ec.ECDH(), self.umpire_public_key)
+            self.secret_derived_shared_key = HKDF(algorithm = hashes.SHA256(), length = 32, salt = None, info = b'handshake data').derive(self.secret_shared_key)
+
         # message with text data.  Note it is actually still binary, so we use .decode() to get the string version
         else:
+            # todo - encryption
             print(f'    {msg.payload}')
             print(f'    {msg.payload.decode('utf-8')}')
 
